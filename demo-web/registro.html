@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Datos - SGPF MSPAS</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="dashboard-body">
+    <!-- Barra de navegación -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <button class="btn-back" onclick="goToDashboard()">← Volver</button>
+            <div class="nav-title">
+                <h1>Registro de Datos</h1>
+                <span>Septiembre 2025</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="user-info">
+                <span class="user-name" id="user-name">Cargando...</span>
+            </div>
+            <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <!-- Formulario de registro -->
+        <div class="registro-container">
+            <div class="registro-header">
+                <h2>📝 Nuevo Registro Mensual</h2>
+                <p>Ingresa la cantidad de usuarias atendidas por método de planificación familiar</p>
+            </div>
+
+            <form id="registro-form" class="registro-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="comunidad">🏘️ Comunidad</label>
+                        <select id="comunidad" required>
+                            <option value="">Selecciona una comunidad...</option>
+                            <option value="san-pedro-necta">San Pedro Necta</option>
+                            <option value="todos-santos">Todos Santos Cuchumatán</option>
+                            <option value="santa-barbara">Santa Bárbara</option>
+                            <option value="la-democracia">La Democracia</option>
+                            <option value="san-juan-atitan">San Juan Atitán</option>
+                            <option value="colotenango">Colotenango</option>
+                            <option value="san-gaspar-ixchil">San Gaspar Ixchil</option>
+                            <option value="santa-eulalia">Santa Eulalia</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fecha">📅 Fecha de Registro</label>
+                        <input type="date" id="fecha" required>
+                    </div>
+                </div>
+
+                <div class="metodos-section">
+                    <h3>Métodos de Planificación Familiar</h3>
+                    <div class="metodos-grid">
+                        <!-- Inyecciones -->
+                        <div class="metodo-card">
+                            <div class="metodo-header">
+                                <span class="metodo-icon">💉</span>
+                                <h4>Inyecciones</h4>
+                            </div>
+                            <div class="metodo-inputs">
+                                <div class="input-group">
+                                    <label>Mensual</label>
+                                    <input type="number" name="iny_mensual" min="0" placeholder="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>Bimensual</label>
+                                    <input type="number" name="iny_bimensual" min="0" placeholder="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>Trimestral</label>
+                                    <input type="number" name="iny_trimestral" min="0" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Métodos orales -->
+                        <div class="metodo-card">
+                            <div class="metodo-header">
+                                <span class="metodo-icon">💊</span>
+                                <h4>Métodos Orales</h4>
+                            </div>
+                            <div class="metodo-inputs">
+                                <div class="input-group">
+                                    <label>Píldoras</label>
+                                    <input type="number" name="pildoras" min="0" placeholder="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>Píldora de Emergencia</label>
+                                    <input type="number" name="pildora_emergencia" min="0" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dispositivos -->
+                        <div class="metodo-card">
+                            <div class="metodo-header">
+                                <span class="metodo-icon">🔧</span>
+                                <h4>Dispositivos</h4>
+                            </div>
+                            <div class="metodo-inputs">
+                                <div class="input-group">
+                                    <label>DIU</label>
+                                    <input type="number" name="diu" min="0" placeholder="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>Implante</label>
+                                    <input type="number" name="implante" min="0" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Métodos de barrera -->
+                        <div class="metodo-card">
+                            <div class="metodo-header">
+                                <span class="metodo-icon">🛡️</span>
+                                <h4>Métodos de Barrera</h4>
+                            </div>
+                            <div class="metodo-inputs">
+                                <div class="input-group">
+                                    <label>Condón Masculino</label>
+                                    <input type="number" name="condon_masculino" min="0" placeholder="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>Condón Femenino</label>
+                                    <input type="number" name="condon_femenino" min="0" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Métodos naturales -->
+                        <div class="metodo-card">
+                            <div class="metodo-header">
+                                <span class="metodo-icon">🤱</span>
+                                <h4>Métodos Naturales</h4>
+                            </div>
+                            <div class="metodo-inputs">
+                                <div class="input-group">
+                                    <label>MELA</label>
+                                    <input type="number" name="mela" min="0" placeholder="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>Collar del Ciclo</label>
+                                    <input type="number" name="collar" min="0" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Métodos definitivos -->
+                        <div class="metodo-card">
+                            <div class="metodo-header">
+                                <span class="metodo-icon">⚕️</span>
+                                <h4>Métodos Definitivos</h4>
+                            </div>
+                            <div class="metodo-inputs">
+                                <div class="input-group">
+                                    <label>AQV Femenina</label>
+                                    <input type="number" name="aqv_femenina" min="0" placeholder="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>AQV Masculina</label>
+                                    <input type="number" name="aqv_masculina" min="0" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen y observaciones -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="observaciones">📝 Observaciones (Opcional)</label>
+                        <textarea id="observaciones" rows="3" placeholder="Agregar comentarios adicionales..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Resumen del registro -->
+                <div class="registro-summary">
+                    <h4>📊 Resumen del Registro</h4>
+                    <div class="summary-stats">
+                        <div class="summary-item">
+                            <span class="summary-label">Total de usuarias:</span>
+                            <span class="summary-value" id="total-usuarias">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Métodos utilizados:</span>
+                            <span class="summary-value" id="metodos-utilizados">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="resetForm()">
+                        🔄 Limpiar Formulario
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        💾 Guardar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de registros del mes -->
+        <div class="registros-mes">
+            <h3>📋 Registros de Septiembre 2025</h3>
+            <div class="registros-list" id="registros-list">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </main>
+
+    <script src="js/shared.js"></script>
+    <script src="js/registro.js"></script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SGPF MSPAS</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="dashboard-body">
+    <!-- Barra de navegación superior -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <div class="nav-logo">🏥</div>
+            <div class="nav-title">
+                <h1>SGPF - MSPAS</h1>
+                <span>Sistema de Gestión de Planificación Familiar</span>
+            </div>
+        </div>
+        
+        <div class="nav-right">
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-name" id="user-name">Cargando...</span>
+                    <span class="user-role" id="user-role">Cargando...</span>
+                </div>
+                <div class="user-avatar">👩‍⚕️</div>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <!-- Header del dashboard -->
+        <div class="dashboard-header">
+            <div class="header-info">
+                <h2>Dashboard - Centro de Salud Norte</h2>
+                <p>Huehuetenango • Actualizado: <span id="last-update"></span></p>
+            </div>
+            <div class="header-actions">
+                <button class="btn-secondary" onclick="refreshData()">
+                    🔄 Actualizar
+                </button>
+                <button class="btn-primary" onclick="goToRegistro()">
+                    ➕ Nuevo Registro
+                </button>
+            </div>
+        </div>
+
+        <!-- Tarjetas de estadísticas -->
+        <div class="stats-grid">
+            <div class="stat-card primary">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="total-usuarias">0</div>
+                    <div class="stat-label">Usuarias Atendidas</div>
+                    <div class="stat-change">+12% vs mes anterior</div>
+                </div>
+            </div>
+            
+            <div class="stat-card success">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="cumplimiento">0%</div>
+                    <div class="stat-label">Cumplimiento Anual</div>
+                    <div class="stat-change">+5% vs objetivo</div>
+                </div>
+            </div>
+            
+            <div class="stat-card warning">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="meta-anual">0</div>
+                    <div class="stat-label">Meta Anual</div>
+                    <div class="stat-change">Actualizada en enero</div>
+                </div>
+            </div>
+            
+            <div class="stat-card danger">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="alertas">0</div>
+                    <div class="stat-label">Alertas Activas</div>
+                    <div class="stat-change">Requieren atención</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido en dos columnas -->
+        <div class="dashboard-grid">
+            <!-- Gráficas -->
+            <div class="chart-section">
+                <div class="section-header">
+                    <h3>📊 Tendencias Mensuales</h3>
+                    <select id="chart-filter">
+                        <option value="todos">Todos los métodos</option>
+                        <option value="inyeccion">Inyecciones</option>
+                        <option value="diu">DIU</option>
+                        <option value="implante">Implantes</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="trend-chart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Actividad reciente -->
+            <div class="activity-section">
+                <div class="section-header">
+                    <h3>📋 Registros Recientes</h3>
+                    <button class="btn-link" onclick="goToRegistro()">Ver todos</button>
+                </div>
+                <div class="activity-list" id="activity-list">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de comunidades -->
+        <div class="communities-section">
+            <div class="section-header">
+                <h3>🏘️ Estado por Comunidades</h3>
+                <div class="filters">
+                    <select id="territory-filter">
+                        <option value="todos">Todos los territorios</option>
+                        <option value="norte">Territorio Norte</option>
+                        <option value="sur">Territorio Sur</option>
+                        <option value="este">Territorio Este</option>
+                    </select>
+                </div>
+            </div>
+            <div class="communities-grid" id="communities-grid">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Alertas -->
+        <div class="alerts-section">
+            <div class="section-header">
+                <h3>🚨 Alertas y Notificaciones</h3>
+                <span class="alert-count" id="alert-count">3 pendientes</span>
+            </div>
+            <div class="alerts-list" id="alerts-list">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </main>
+
+    <script src="js/shared.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
