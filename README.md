@@ -131,18 +131,16 @@ sistema-planificacion-familiar-mspas/
 
 ## 👨‍💻 Información del Desarrollador
 
-- **Estudiante**: [Tu Nombre]
-- **Universidad**: Universidad de San Carlos de Guatemala
+- **Estudiante**: Gerbert David García Loaiza
+- **Universidad**: Universidad Mariano Gálvez de Guatemala
 - **Carrera**: Ingeniería en Sistemas
-- **Proyecto**: Trabajo de graduación
-- **Fecha**: Septiembre 2025
+- **Proyecto**: Proyecto de graduación
+- **Fecha**: 2025
 
 ## 📞 Contacto y Soporte
 
-- 📧 **Email**: [tu-email@usac.edu.gt]
-- 📱 **WhatsApp**: [tu-numero]
-- 💼 **LinkedIn**: [tu-perfil]
-- 🐙 **GitHub**: [tu-usuario]
+- 📧 **Email**: [ggarcial17@miumg.edu.gt]
+- 📱 **WhatsApp**: [5422-4606]
 
 ## 📄 Licencia
 
