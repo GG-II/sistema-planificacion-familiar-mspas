@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGPF - Sistema de Gestión de Planificación Familiar</title>
+    <meta name="description" content="Sistema de Gestión de Planificación Familiar - MSPAS Huehuetenango">
+    <meta name="author" content="Proyecto Universitario - Ingeniería en Sistemas">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+    
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- PWA Meta tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head>
+<body>
+    <!-- Indicador de carga -->
+    <div id="loading-indicator" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999;">
+        <div style="text-align: center; color: white;">
+            <div style="border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 4px solid white; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
+            <div>Cargando...</div>
+        </div>
+    </div>
+
+    <!-- Aplicación principal -->
+    <div id="app">
+        <!-- PANTALLA DE LOGIN -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">🏥</div>
+                    <h1>MSPAS - Sistema de Planificación Familiar</h1>
+                    <p style="color: #7f8c8d; margin-top: 10px;">Centro de Salud Norte - Huehuetenango</p>
+                </div>
+                
+                <form id="login-form">
+                    <input type="email" placeholder="Email o DPI" required value="admin@mspas.gob.gt">
+                    <input type="password" placeholder="Contraseña" required value="123456">
+                    <button type="submit">Iniciar Sesión</button>
+                </form>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #ecf0f1; border-radius: 8px; font-size: 14px; color: #7f8c8d;">
+                    <strong>Demo - Credenciales de prueba:</strong><br>
+                    📧 admin@mspas.gob.gt<br>
+                    🔑 123456
+                </div>
+                
+                <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #bdc3c7;">
+                    <p>Proyecto Universitario - Ingeniería en Sistemas</p>
+                    <p>Universidad de San Carlos de Guatemala</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PANTALLA DE DASHBOARD -->
+        <div id="dashboard-screen" class="screen">
+            <!-- El contenido se genera dinámicamente con JavaScript -->
+            <div style="display: flex; align-items: center; justify-content: center; height: 100vh;">
+                <div style="text-align: center; color: #7f8c8d;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+                    <h2>Cargando Dashboard...</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    
+    <!-- Estilos adicionales inline para animaciones -->
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Animaciones de entrada */
+        .screen.active {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Hover effects adicionales */
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .stat-card:hover::before {
+            left: 100%;
+        }
+    </style>
+</body>
+</html>
