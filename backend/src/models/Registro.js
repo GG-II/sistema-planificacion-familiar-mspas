@@ -161,7 +161,7 @@ const Registro = sequelize.define('Registro', {
   ]
 });
 
-// Hook CORREGIDO para calcular año y mes automáticamente
+// Hook para calcular año y mes automáticamente 
 Registro.beforeValidate((registro) => {
   if (registro.fecha_registro) {
     const fecha = new Date(registro.fecha_registro);
