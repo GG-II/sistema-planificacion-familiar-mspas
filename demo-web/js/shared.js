@@ -1,107 +1,26 @@
-// ===== DATOS SIMULADOS GLOBALES =====
-const DEMO_DATA = {
-    usuarios: {
-        'admin@mspas.gob.gt': { 
-            password: '123456', 
-            nombre: 'Dr. María González', 
-            rol: 'Coordinadora Municipal',
-            avatar: '👩‍⚕️',
-            comunidades: ['todas'] // Acceso a todas las comunidades
-        },
-        'aux01@mspas.gob.gt': { 
-            password: '123456', 
-            nombre: 'Ana López', 
-            rol: 'Auxiliar de Enfermería',
-            avatar: '👩‍🔬',
-            comunidades: ['san-pedro-necta', 'todos-santos'] // Acceso limitado
-        }
-    },
-    
-    estadisticas: {
-        totalUsuarias: 1847,
-        metaAnual: 2100,
-        porcentajeCumplimiento: 87.9,
-        alertasActivas: 3
-    },
-    
-    registrosRecientes: [
-        { 
-            id: 1,
-            comunidad: 'San Pedro Necta', 
-            fecha: '2025-09-04',
-            iny_trimestral: 15,
-            diu: 2,
-            pildoras: 8,
-            estado: 'validado',
-            registradoPor: 'Ana López'
-        },
-        { 
-            id: 2,
-            comunidad: 'Todos Santos', 
-            fecha: '2025-09-03',
-            implante: 3,
-            iny_mensual: 6,
-            condon_masculino: 25,
-            estado: 'pendiente',
-            registradoPor: 'Carlos Morales'
-        },
-        { 
-            id: 3,
-            comunidad: 'Santa Bárbara', 
-            fecha: '2025-09-03',
-            iny_bimensual: 8,
-            pildoras: 12,
-            mela: 4,
-            estado: 'aprobado',
-            registradoPor: 'María Santos'
-        },
-        { 
-            id: 4,
-            comunidad: 'La Democracia', 
-            fecha: '2025-09-02',
-            iny_trimestral: 12,
-            diu: 1,
-            collar: 3,
-            estado: 'validado',
-            registradoPor: 'Ana López'
-        }
-    ],
-    
-    comunidades: [
-        { id: 'san-pedro-necta', nombre: 'San Pedro Necta', territorio: 'Norte', poblacion_mef: 245 },
-        { id: 'todos-santos', nombre: 'Todos Santos Cuchumatán', territorio: 'Norte', poblacion_mef: 189 },
-        { id: 'santa-barbara', nombre: 'Santa Bárbara', territorio: 'Sur', poblacion_mef: 156 },
-        { id: 'la-democracia', nombre: 'La Democracia', territorio: 'Este', poblacion_mef: 203 },
-        { id: 'san-juan-atitan', nombre: 'San Juan Atitán', territorio: 'Norte', poblacion_mef: 178 },
-        { id: 'colotenango', nombre: 'Colotenango', territorio: 'Sur', poblacion_mef: 234 },
-        { id: 'san-gaspar-ixchil', nombre: 'San Gaspar Ixchil', territorio: 'Este', poblacion_mef: 167 },
-        { id: 'santa-eulalia', nombre: 'Santa Eulalia', territorio: 'Norte', poblacion_mef: 198 }
-    ],
-    
-    alertas: [
-        {
-            tipo: 'warning',
-            titulo: 'Meta trimestral baja',
-            mensaje: 'San Pedro Necta solo ha alcanzado el 18% de su meta trimestral',
-            fecha: '2025-09-05',
-            prioridad: 'alta'
-        },
-        {
-            tipo: 'info',
-            titulo: 'Registro pendiente',
-            mensaje: 'Todos Santos tiene registros pendientes de validación',
-            fecha: '2025-09-04',
-            prioridad: 'media'
-        },
-        {
-            tipo: 'success',
-            titulo: 'Meta superada',
-            mensaje: 'Santa Bárbara superó su meta mensual en 105%',
-            fecha: '2025-09-03',
-            prioridad: 'baja'
-        }
-    ]
-};
+// ===== CONFIGURACIÓN DE LA API =====
+const API_BASE_URL = 'http://localhost:5000/api';
+
+// ===== GESTIÓN DE TOKENS =====
+function getToken() {
+    return localStorage.getItem('authToken');
+}
+
+function setToken(token) {
+    localStorage.setItem('authToken', token);
+}
+
+function removeToken() {
+    localStorage.removeItem('authToken');
+}
+
+function getRefreshToken() {
+    return localStorage.getItem('refreshToken');
+}
+
+function setRefreshToken(token) {
+    localStorage.setItem('refreshToken', token);
+}
 
 // ===== GESTIÓN DE SESIÓN =====
 function getCurrentUser() {
@@ -115,10 +34,202 @@ function setCurrentUser(user) {
 
 function clearCurrentUser() {
     localStorage.removeItem('currentUser');
+    removeToken();
+    localStorage.removeItem('refreshToken');
 }
 
 function isLoggedIn() {
-    return getCurrentUser() !== null;
+    return getCurrentUser() !== null && getToken() !== null;
+}
+
+// ===== FUNCIONES DE API =====
+async function apiRequest(url, options = {}) {
+    const token = getToken();
+    
+    const defaultOptions = {
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        }
+    };
+
+    const finalOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...options.headers
+        }
+    };
+
+    try {
+        console.log(`🌐 API Request: ${options.method || 'GET'} ${url}`);
+        
+        const response = await fetch(`${API_BASE_URL}${url}`, finalOptions);
+        
+        // Intentar parsear JSON
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            data = { success: false, message: 'Respuesta inválida del servidor' };
+        }
+
+        if (!response.ok) {
+            // Si es error 401, intentar refrescar token
+            if (response.status === 401 && token) {
+                const refreshed = await refreshAuthToken();
+                if (refreshed) {
+                    // Reintentar la petición original con nuevo token
+                    finalOptions.headers['Authorization'] = `Bearer ${getToken()}`;
+                    const retryResponse = await fetch(`${API_BASE_URL}${url}`, finalOptions);
+                    return await retryResponse.json();
+                } else {
+                    // No se pudo refrescar, logout
+                    logout();
+                    throw new Error('Sesión expirada');
+                }
+            }
+            
+            throw new Error(data.message || `Error ${response.status}`);
+        }
+
+        console.log(`✅ API Response: ${url}`, data);
+        return data;
+
+    } catch (error) {
+        console.error(`❌ API Error: ${url}`, error);
+        throw error;
+    }
+}
+
+// ===== AUTENTICACIÓN =====
+async function loginUser(email, password) {
+    try {
+        const response = await apiRequest('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+
+        if (response.success) {
+            setToken(response.data.token);
+            setRefreshToken(response.data.refreshToken);
+            setCurrentUser(response.data.user);
+            
+            console.log('✅ Login exitoso:', response.data.user.nombres);
+            return response.data.user;
+        } else {
+            throw new Error(response.message);
+        }
+    } catch (error) {
+        console.error('❌ Error en login:', error);
+        throw error;
+    }
+}
+
+async function refreshAuthToken() {
+    try {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) return false;
+
+        const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            setToken(data.data.token);
+            setRefreshToken(data.data.refreshToken);
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('❌ Error al refrescar token:', error);
+        return false;
+    }
+}
+
+async function logoutUser() {
+    try {
+        await apiRequest('/auth/logout', { method: 'POST' });
+    } catch (error) {
+        console.warn('Error al hacer logout en servidor:', error);
+    } finally {
+        clearCurrentUser();
+    }
+}
+
+// ===== FUNCIONES DE DATOS =====
+async function getEstadisticas(año, mes) {
+    try {
+        const params = new URLSearchParams();
+        if (año) params.append('año', año);
+        if (mes) params.append('mes', mes);
+        
+        const response = await apiRequest(`/registros/estadisticas?${params}`);
+        return response.data;
+    } catch (error) {
+        console.error('❌ Error al obtener estadísticas:', error);
+        throw error;
+    }
+}
+
+async function getRegistros(filters = {}) {
+    try {
+        const params = new URLSearchParams();
+        Object.keys(filters).forEach(key => {
+            if (filters[key] !== undefined && filters[key] !== '') {
+                params.append(key, filters[key]);
+            }
+        });
+        
+        const response = await apiRequest(`/registros?${params}`);
+        return response.data;
+    } catch (error) {
+        console.error('❌ Error al obtener registros:', error);
+        throw error;
+    }
+}
+
+async function createRegistro(registroData) {
+    try {
+        const response = await apiRequest('/registros', {
+            method: 'POST',
+            body: JSON.stringify(registroData)
+        });
+        
+        if (response.success) {
+            console.log('✅ Registro creado:', response.data.registro);
+            return response.data.registro;
+        } else {
+            throw new Error(response.message);
+        }
+    } catch (error) {
+        console.error('❌ Error al crear registro:', error);
+        throw error;
+    }
+}
+
+async function updateRegistro(id, registroData) {
+    try {
+        const response = await apiRequest(`/registros/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(registroData)
+        });
+        
+        if (response.success) {
+            return response.data.registro;
+        } else {
+            throw new Error(response.message);
+        }
+    } catch (error) {
+        console.error('❌ Error al actualizar registro:', error);
+        throw error;
+    }
 }
 
 // ===== NAVEGACIÓN =====
@@ -135,11 +246,12 @@ function goToRegistro() {
 }
 
 function logout() {
-    clearCurrentUser();
-    showNotification('Sesión cerrada correctamente', 'info');
-    setTimeout(() => {
-        goToLogin();
-    }, 1000);
+    logoutUser().then(() => {
+        showNotification('Sesión cerrada correctamente', 'info');
+        setTimeout(() => {
+            goToLogin();
+        }, 1000);
+    });
 }
 
 // ===== SISTEMA DE NOTIFICACIONES =====
@@ -278,43 +390,6 @@ function animateNumber(element, targetNumber, duration = 1000) {
     }, 16);
 }
 
-// ===== GESTIÓN DE DATOS LOCALES =====
-function getRegistrosGuardados() {
-    const registros = localStorage.getItem('registrosDemo');
-    return registros ? JSON.parse(registros) : [];
-}
-
-function guardarRegistro(registro) {
-    const registros = getRegistrosGuardados();
-    registro.id = Date.now(); // ID único
-    registro.fechaCreacion = new Date().toISOString();
-    registro.registradoPor = getCurrentUser()?.nombre || 'Usuario Demo';
-    registro.estado = 'pendiente';
-    
-    registros.push(registro);
-    localStorage.setItem('registrosDemo', JSON.stringify(registros));
-    return registro;
-}
-
-function actualizarRegistro(id, datosActualizados) {
-    const registros = getRegistrosGuardados();
-    const index = registros.findIndex(r => r.id === id);
-    
-    if (index !== -1) {
-        registros[index] = { ...registros[index], ...datosActualizados };
-        localStorage.setItem('registrosDemo', JSON.stringify(registros));
-        return registros[index];
-    }
-    return null;
-}
-
-function eliminarRegistro(id) {
-    const registros = getRegistrosGuardados();
-    const registrosFiltrados = registros.filter(r => r.id !== id);
-    localStorage.setItem('registrosDemo', JSON.stringify(registrosFiltrados));
-}
-
-// ===== CÁLCULOS Y ESTADÍSTICAS =====
 function calcularTotalUsuarias(registro) {
     const campos = [
         'iny_mensual', 'iny_bimensual', 'iny_trimestral',
@@ -341,31 +416,6 @@ function contarMetodosUtilizados(registro) {
     ];
     
     return campos.filter(campo => (parseInt(registro[campo]) || 0) > 0).length;
-}
-
-function obtenerEstadisticasActualizadas() {
-    const registrosGuardados = getRegistrosGuardados();
-    const registrosRecientes = DEMO_DATA.registrosRecientes;
-    
-    // Combinar registros demo con registros guardados
-    const todosLosRegistros = [...registrosRecientes, ...registrosGuardados];
-    
-    const totalUsuarias = todosLosRegistros.reduce((total, registro) => {
-        return total + calcularTotalUsuarias(registro);
-    }, DEMO_DATA.estadisticas.totalUsuarias);
-    
-    const porcentajeCumplimiento = Math.min(
-        (totalUsuarias / DEMO_DATA.estadisticas.metaAnual) * 100, 
-        100
-    );
-    
-    return {
-        totalUsuarias,
-        metaAnual: DEMO_DATA.estadisticas.metaAnual,
-        porcentajeCumplimiento: Math.round(porcentajeCumplimiento * 10) / 10,
-        alertasActivas: DEMO_DATA.estadisticas.alertasActivas,
-        registrosRecientes: todosLosRegistros.slice(-10) // Últimos 10
-    };
 }
 
 // ===== PROTECCIÓN DE RUTAS =====
@@ -396,18 +446,85 @@ document.addEventListener('DOMContentLoaded', function() {
     if (paginaActual === 'login.html' && isLoggedIn()) {
         goToDashboard();
     }
+    
+    console.log('🔗 Sistema conectado al backend:', API_BASE_URL);
 });
 
-// ===== FUNCIONES DE SIMULACIÓN =====
-function simularCargaDatos() {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(obtenerEstadisticasActualizadas());
-        }, Math.random() * 1000 + 500); // Entre 500ms y 1.5s
-    });
+// ===== FUNCIONES DE TESTING =====
+async function testConnection() {
+    try {
+        const response = await fetch('http://localhost:5000/health');
+        const data = await response.json();
+        console.log('✅ Conexión al backend exitosa:', data);
+        showNotification('Conexión al backend exitosa', 'success');
+        return true;
+    } catch (error) {
+        console.error('❌ Error de conexión al backend:', error);
+        showNotification('Error de conexión al backend', 'error');
+        return false;
+    }
 }
 
-function simularSincronizacion() {
+// ===== FUNCIONES DE COMPATIBILIDAD =====
+
+// Función para simular carga de datos (compatibilidad con dashboard.js anterior)
+async function simularCargaDatos() {
+    try {
+        console.log('🔄 Cargando datos reales del backend...');
+        
+        const [estadisticas, registros] = await Promise.all([
+            getEstadisticas(new Date().getFullYear()),
+            getRegistros({ limit: 10 })
+        ]);
+        
+        return {
+            ...estadisticas,
+            registrosRecientes: registros.registros || []
+        };
+    } catch (error) {
+        console.error('❌ Error al cargar datos:', error);
+        throw error;
+    }
+}
+
+// Datos de comunidades (temporal hasta que se agreguen al backend)
+const DEMO_DATA = {
+    comunidades: [
+        { id: 'san-pedro-necta', nombre: 'San Pedro Necta', territorio: 'Norte', poblacion_mef: 245 },
+        { id: 'todos-santos', nombre: 'Todos Santos Cuchumatán', territorio: 'Norte', poblacion_mef: 189 },
+        { id: 'santa-barbara', nombre: 'Santa Bárbara', territorio: 'Sur', poblacion_mef: 156 },
+        { id: 'la-democracia', nombre: 'La Democracia', territorio: 'Este', poblacion_mef: 203 },
+        { id: 'san-juan-atitan', nombre: 'San Juan Atitán', territorio: 'Norte', poblacion_mef: 178 },
+        { id: 'colotenango', nombre: 'Colotenango', territorio: 'Sur', poblacion_mef: 234 },
+        { id: 'san-gaspar-ixchil', nombre: 'San Gaspar Ixchil', territorio: 'Este', poblacion_mef: 167 },
+        { id: 'santa-eulalia', nombre: 'Santa Eulalia', territorio: 'Norte', poblacion_mef: 198 }
+    ],
+    
+    alertas: [
+        {
+            tipo: 'warning',
+            titulo: 'Meta trimestral baja',
+            mensaje: 'Algunas comunidades están por debajo del 25% esperado',
+            fecha: new Date().toISOString(),
+            prioridad: 'alta'
+        },
+        {
+            tipo: 'info',
+            titulo: 'Registros pendientes',
+            mensaje: 'Hay registros pendientes de validación',
+            fecha: new Date().toISOString(),
+            prioridad: 'media'
+        }
+    ]
+};
+
+// Función para obtener estadísticas actualizadas (compatibilidad)
+function obtenerEstadisticasActualizadas() {
+    return simularCargaDatos();
+}
+
+// Función de sincronización simulada
+async function simularSincronizacion() {
     showNotification('Sincronizando con el servidor...', 'info');
     
     return new Promise((resolve) => {
@@ -418,26 +535,84 @@ function simularSincronizacion() {
     });
 }
 
-// Exportar funciones para uso global
+// ===== FUNCIÓN PARA LIMPIAR DATOS =====
+function limpiarEstadisticas(stats) {
+    return {
+        total_usuarias: parseInt(stats.total_usuarias) || 0,
+        meta_anual: parseInt(stats.meta_anual) || 2100,
+        porcentaje_cumplimiento: parseFloat(stats.porcentaje_cumplimiento) || 0,
+        total_registros: parseInt(stats.total_registros) || 0,
+        por_estado: stats.por_estado || {
+            pendiente: 0,
+            validado: 0,
+            aprobado: 0
+        },
+        registrosRecientes: stats.registrosRecientes || []
+    };
+}
+
+// Actualizar la función simularCargaDatos
+async function simularCargaDatos() {
+    try {
+        console.log('🔄 Cargando datos reales del backend...');
+        
+        const [estadisticas, registros] = await Promise.all([
+            getEstadisticas(new Date().getFullYear()),
+            getRegistros({ limit: 10 })
+        ]);
+        
+        const statsLimpios = limpiarEstadisticas({
+            ...estadisticas,
+            registrosRecientes: registros.registros || []
+        });
+        
+        console.log('📊 Estadísticas procesadas:', statsLimpios);
+        return statsLimpios;
+        
+    } catch (error) {
+        console.error('❌ Error al cargar datos:', error);
+        
+        // Datos de fallback cuando hay error
+        return limpiarEstadisticas({
+            total_usuarias: 0,
+            meta_anual: 2100,
+            porcentaje_cumplimiento: 0,
+            total_registros: 0,
+            registrosRecientes: []
+        });
+    }
+}
+
+// Exportar función actualizada
+window.simularCargaDatos = simularCargaDatos;
+window.limpiarEstadisticas = limpiarEstadisticas;
+
+// Exportar funciones adicionales
+window.simularCargaDatos = simularCargaDatos;
+window.obtenerEstadisticasActualizadas = obtenerEstadisticasActualizadas;
+window.simularSincronizacion = simularSincronizacion;
 window.DEMO_DATA = DEMO_DATA;
+
+// Exportar funciones para uso global
 window.getCurrentUser = getCurrentUser;
 window.setCurrentUser = setCurrentUser;
 window.clearCurrentUser = clearCurrentUser;
 window.isLoggedIn = isLoggedIn;
+window.loginUser = loginUser;
+window.logoutUser = logoutUser;
+window.logout = logout;
 window.goToLogin = goToLogin;
 window.goToDashboard = goToDashboard;
 window.goToRegistro = goToRegistro;
-window.logout = logout;
 window.showNotification = showNotification;
 window.formatDate = formatDate;
 window.formatDateTime = formatDateTime;
 window.getCurrentDate = getCurrentDate;
 window.animateNumber = animateNumber;
-window.guardarRegistro = guardarRegistro;
-window.getRegistrosGuardados = getRegistrosGuardados;
 window.calcularTotalUsuarias = calcularTotalUsuarias;
 window.contarMetodosUtilizados = contarMetodosUtilizados;
-window.obtenerEstadisticasActualizadas = obtenerEstadisticasActualizadas;
-window.simularCargaDatos = simularCargaDatos;
-window.simularSincronizacion = simularSincronizacion;
-    
+window.getEstadisticas = getEstadisticas;
+window.getRegistros = getRegistros;
+window.createRegistro = createRegistro;
+window.updateRegistro = updateRegistro;
+window.testConnection = testConnection;

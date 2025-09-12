@@ -1,7 +1,7 @@
-// ===== LÓGICA DEL REGISTRO DE DATOS =====
+// ===== LÓGICA DEL REGISTRO CON API REAL =====
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📝 Página de registro cargada');
+    console.log('📝 Página de registro cargada - Conectado al backend');
     
     // Verificar sesión
     if (!verificarSesion()) {
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar event listeners
     setupRegistroListeners();
     
-    // Cargar registros existentes
+    // Cargar registros existentes del backend
     loadExistingRegistros();
 });
 
@@ -31,7 +31,7 @@ function initializeRegistroPage() {
     // Filtrar comunidades según permisos del usuario
     filterCommunitiesByUser();
     
-    console.log('✅ Página de registro inicializada');
+    console.log('✅ Página de registro inicializada con backend real');
 }
 
 function displayUserInfo() {
@@ -39,7 +39,11 @@ function displayUserInfo() {
     if (!user) return;
     
     const userNameElements = document.querySelectorAll('#user-name, .user-name');
-    userNameElements.forEach(el => el.textContent = user.nombre);
+    userNameElements.forEach(el => {
+        el.textContent = `${user.nombres} ${user.apellidos}`;
+    });
+    
+    console.log('👤 Usuario mostrado:', user.nombres, user.apellidos);
 }
 
 function filterCommunitiesByUser() {
@@ -49,17 +53,19 @@ function filterCommunitiesByUser() {
     if (!user || !comunidadSelect) return;
     
     // Si el usuario tiene acceso a todas las comunidades
-    if (user.comunidades.includes('todas')) {
+    if (user.comunidades_asignadas && user.comunidades_asignadas.includes('todas')) {
         return; // Mantener todas las opciones
     }
     
     // Filtrar solo las comunidades permitidas
     const opciones = comunidadSelect.querySelectorAll('option');
     opciones.forEach(opcion => {
-        if (opcion.value && !user.comunidades.includes(opcion.value)) {
+        if (opcion.value && user.comunidades_asignadas && !user.comunidades_asignadas.includes(opcion.value)) {
             opcion.style.display = 'none';
         }
     });
+    
+    console.log('🏘️ Comunidades filtradas según permisos del usuario');
 }
 
 function setupRegistroListeners() {
@@ -132,10 +138,8 @@ function onComunidadChange() {
     const comunidadId = comunidadSelect.value;
     
     if (comunidadId) {
-        const comunidad = DEMO_DATA.comunidades.find(c => c.id === comunidadId);
-        if (comunidad) {
-            showNotification(`Seleccionada: ${comunidad.nombre} (${comunidad.poblacion_mef} MEF)`, 'info');
-        }
+        const comunidadText = comunidadSelect.options[comunidadSelect.selectedIndex].text;
+        showNotification(`Seleccionada: ${comunidadText}`, 'info');
     }
 }
 
@@ -158,20 +162,21 @@ async function handleRegistroSubmit(event) {
             return;
         }
         
-        // Simular guardado en servidor
-        await simulateServerSave(registroData);
+        console.log('📤 Enviando registro al backend:', registroData);
         
-        // Guardar en localStorage
-        const registroGuardado = guardarRegistro(registroData);
+        // Enviar al backend real
+        const registroGuardado = await createRegistro(registroData);
+        
+        console.log('✅ Registro guardado en el backend:', registroGuardado);
         
         // Mostrar éxito
         showNotification(
-            `Registro guardado correctamente para ${registroData.comunidadNombre}`, 
+            `Registro guardado correctamente para ${registroData.comunidad_nombre}`, 
             'success'
         );
         
         // Actualizar lista de registros
-        loadExistingRegistros();
+        await loadExistingRegistros();
         
         // Limpiar formulario
         resetForm();
@@ -187,8 +192,24 @@ async function handleRegistroSubmit(event) {
         }, 2000);
         
     } catch (error) {
-        console.error('Error al guardar registro:', error);
-        showNotification('Error al guardar el registro. Intenta nuevamente.', 'error');
+        console.error('❌ Error al guardar registro:', error);
+        
+        let errorMessage = 'Error al guardar el registro';
+        
+        if (error.message.includes('Ya existe un registro')) {
+            errorMessage = 'Ya existe un registro para esta comunidad este mes';
+        } else if (error.message.includes('No tienes acceso')) {
+            errorMessage = 'No tienes permisos para registrar en esta comunidad';
+        } else if (error.message.includes('fetch') || error.message.includes('NetworkError')) {
+            errorMessage = 'Error de conexión. Verifica que el backend esté funcionando';
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+            errorMessage = 'Sesión expirada o sin permisos. Inicia sesión nuevamente';
+            setTimeout(() => logout(), 2000);
+        } else {
+            errorMessage = error.message;
+        }
+        
+        showNotification(errorMessage, 'error');
         
         submitBtn.style.background = '#e74c3c';
         submitBtn.textContent = '❌ Error';
@@ -207,12 +228,12 @@ function collectFormData() {
     const observacionesInput = document.getElementById('observaciones');
     
     const comunidadId = comunidadSelect.value;
-    const comunidad = DEMO_DATA.comunidades.find(c => c.id === comunidadId);
+    const comunidadNombre = comunidadSelect.options[comunidadSelect.selectedIndex].text;
     
     const data = {
-        comunidad: comunidadId,
-        comunidadNombre: comunidad ? comunidad.nombre : 'Desconocida',
-        fecha: fechaInput.value,
+        comunidad_id: comunidadId,
+        comunidad_nombre: comunidadNombre,
+        fecha_registro: fechaInput.value,
         observaciones: observacionesInput.value.trim(),
         
         // Métodos de planificación
@@ -236,13 +257,13 @@ function collectFormData() {
 
 function validateRegistroData(data) {
     // Validar comunidad
-    if (!data.comunidad) {
+    if (!data.comunidad_id) {
         showNotification('Debe seleccionar una comunidad', 'warning');
         return false;
     }
     
     // Validar fecha
-    if (!data.fecha) {
+    if (!data.fecha_registro) {
         showNotification('Debe seleccionar una fecha', 'warning');
         return false;
     }
@@ -255,27 +276,22 @@ function validateRegistroData(data) {
     }
     
     // Validar fecha no futura
-    const fechaRegistro = new Date(data.fecha);
+    const fechaRegistro = new Date(data.fecha_registro);
     const hoy = new Date();
+    hoy.setHours(23, 59, 59, 999); // Permitir hasta el final del día actual
+    
     if (fechaRegistro > hoy) {
         showNotification('No se puede registrar datos de fechas futuras', 'warning');
         return false;
     }
     
+    // Validar cantidad razonable
+    if (totalUsuarias > 1000) {
+        showNotification('La cantidad total parece muy alta. Verifica los datos.', 'warning');
+        return false;
+    }
+    
     return true;
-}
-
-function simulateServerSave(data) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            // Simular éxito/fallo aleatorio (90% éxito)
-            if (Math.random() > 0.1) {
-                resolve();
-            } else {
-                reject(new Error('Error de conexión con el servidor'));
-            }
-        }, 1500);
-    });
 }
 
 function resetForm() {
@@ -306,114 +322,129 @@ function resetForm() {
     showNotification('Formulario limpiado', 'info');
 }
 
-function loadExistingRegistros() {
+async function loadExistingRegistros() {
     const registrosList = document.getElementById('registros-list');
     if (!registrosList) return;
     
-    const registrosGuardados = getRegistrosGuardados();
-    const registrosRecientes = [...DEMO_DATA.registrosRecientes, ...registrosGuardados]
-        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-        .slice(0, 10); // Últimos 10
-    
-    if (registrosRecientes.length === 0) {
+    try {
+        console.log('📡 Cargando registros del backend...');
+        
+        // Obtener registros del mes actual
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        
+        const response = await getRegistros({
+            año: currentYear,
+            mes: currentMonth,
+            limit: 20
+        });
+        
+        const registros = response.registros || [];
+        
+        console.log('📋 Registros cargados:', registros.length);
+        
+        if (registros.length === 0) {
+            registrosList.innerHTML = `
+                <div class="empty-state">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
+                    <h4>No hay registros este mes</h4>
+                    <p>Los registros que ingreses aparecerán aquí</p>
+                </div>
+            `;
+            return;
+        }
+        
+        registrosList.innerHTML = registros.map(registro => {
+            const totalUsuarias = calcularTotalUsuarias(registro);
+            const metodosUtilizados = contarMetodosUtilizados(registro);
+            
+            const statusClass = registro.estado === 'aprobado' ? 'success' : 
+                               registro.estado === 'pendiente' ? 'warning' : 'info';
+            
+            const nombreUsuario = registro.usuario_registro 
+                ? `${registro.usuario_registro.nombres} ${registro.usuario_registro.apellidos}`
+                : 'Usuario desconocido';
+            
+            const user = getCurrentUser();
+            const puedeEditar = (
+                registro.registrado_por === user.id && registro.estado === 'pendiente'
+            ) || ['admin', 'coordinador_municipal'].includes(user.rol);
+            
+            return `
+                <div class="registro-item ${statusClass}">
+                    <div class="registro-header">
+                        <div class="registro-info">
+                            <h4>${registro.comunidad_nombre || registro.comunidad_id}</h4>
+                            <span class="registro-fecha">${formatDate(registro.fecha_registro)}</span>
+                        </div>
+                        <div class="registro-status">
+                            <span class="status-badge ${statusClass}">${registro.estado}</span>
+                        </div>
+                    </div>
+                    <div class="registro-stats">
+                        <div class="stat-mini">
+                            <span class="stat-value">${totalUsuarias}</span>
+                            <span class="stat-label">Usuarias</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-value">${metodosUtilizados}</span>
+                            <span class="stat-label">Métodos</span>
+                        </div>
+                    </div>
+                    <div class="registro-actions">
+                        ${puedeEditar ? 
+                            `<button class="btn-small btn-outline" onclick="editarRegistro(${registro.id})">
+                                ✏️ Editar
+                            </button>` : ''
+                        }
+                        <button class="btn-small" onclick="verDetalleRegistro(${registro.id})">
+                            👁️ Ver
+                        </button>
+                    </div>
+                    <div class="registro-user">
+                        <small>Registrado por: ${nombreUsuario}</small>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('❌ Error al cargar registros:', error);
+        
         registrosList.innerHTML = `
             <div class="empty-state">
-                <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
-                <h4>No hay registros este mes</h4>
-                <p>Los registros que ingreses aparecerán aquí</p>
+                <div style="font-size: 48px; margin-bottom: 15px; color: #e74c3c;">⚠️</div>
+                <h4>Error al cargar registros</h4>
+                <p>Verifica la conexión con el backend</p>
+                <button onclick="loadExistingRegistros()" class="btn-secondary" style="margin-top: 10px;">
+                    🔄 Reintentar
+                </button>
             </div>
         `;
-        return;
     }
-    
-    registrosList.innerHTML = registrosRecientes.map(registro => {
-        const totalUsuarias = calcularTotalUsuarias(registro);
-        const metodosUtilizados = contarMetodosUtilizados(registro);
-        
-        const statusClass = registro.estado === 'aprobado' ? 'success' : 
-                           registro.estado === 'pendiente' ? 'warning' : 'info';
-        
-        return `
-            <div class="registro-item ${statusClass}">
-                <div class="registro-header">
-                    <div class="registro-info">
-                        <h4>${registro.comunidadNombre || registro.comunidad}</h4>
-                        <span class="registro-fecha">${formatDate(registro.fecha)}</span>
-                    </div>
-                    <div class="registro-status">
-                        <span class="status-badge ${statusClass}">${registro.estado}</span>
-                    </div>
-                </div>
-                <div class="registro-stats">
-                    <div class="stat-mini">
-                        <span class="stat-value">${totalUsuarias}</span>
-                        <span class="stat-label">Usuarias</span>
-                    </div>
-                    <div class="stat-mini">
-                        <span class="stat-value">${metodosUtilizados}</span>
-                        <span class="stat-label">Métodos</span>
-                    </div>
-                </div>
-                <div class="registro-actions">
-                    ${registro.id && registro.estado === 'pendiente' ? 
-                        `<button class="btn-small btn-outline" onclick="editarRegistro(${registro.id})">
-                            ✏️ Editar
-                        </button>` : ''
-                    }
-                    <button class="btn-small" onclick="verDetalleRegistro(${registro.id || 'demo'})">
-                        👁️ Ver
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
 }
 
-function editarRegistro(registroId) {
-    const registros = getRegistrosGuardados();
-    const registro = registros.find(r => r.id === registroId);
-    
-    if (!registro) {
-        showNotification('Registro no encontrado', 'error');
-        return;
+async function editarRegistro(registroId) {
+    try {
+        console.log('✏️ Editando registro:', registroId);
+        showNotification('Función de edición en desarrollo', 'info');
+        
+        // TODO: Implementar edición real
+        // const registro = await getRegistroById(registroId);
+        // fillFormWithRegistro(registro);
+        
+    } catch (error) {
+        console.error('❌ Error al editar registro:', error);
+        showNotification('Error al cargar el registro para edición', 'error');
     }
-    
-    // Llenar formulario con datos del registro
-    fillFormWithRegistro(registro);
-    
-    showNotification(`Editando registro de ${registro.comunidadNombre}`, 'info');
-    
-    // Scroll al formulario
-    document.querySelector('.registro-form').scrollIntoView({ 
-        behavior: 'smooth' 
-    });
 }
 
-function fillFormWithRegistro(registro) {
-    // Llenar campos básicos
-    document.getElementById('comunidad').value = registro.comunidad || '';
-    document.getElementById('fecha').value = registro.fecha || '';
-    document.getElementById('observaciones').value = registro.observaciones || '';
+function verDetalleRegistro(registroId) {
+    console.log('👁️ Ver detalle del registro:', registroId);
+    showNotification(`Ver detalle del registro #${registroId}`, 'info');
     
-    // Llenar métodos
-    const campos = [
-        'iny_mensual', 'iny_bimensual', 'iny_trimestral',
-        'pildoras', 'pildora_emergencia',
-        'diu', 'implante',
-        'condon_masculino', 'condon_femenino',
-        'mela', 'collar',
-        'aqv_femenina', 'aqv_masculina'
-    ];
-    
-    campos.forEach(campo => {
-        const input = document.querySelector(`input[name="${campo}"]`);
-        if (input && registro[campo]) {
-            input.value = registro[campo];
-        }
-    });
-    
-    // Actualizar resumen
-    updateSummary();
+    // TODO: Implementar vista de detalle
+    // Podría abrir un modal o navegar a una página de detalle
 }
 
 // ===== ATAJOS DE TECLADO =====
@@ -437,11 +468,18 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         goToDashboard();
     }
+    
+    // F5 = Recargar registros
+    if (e.key === 'F5') {
+        e.preventDefault();
+        loadExistingRegistros();
+    }
 });
 
 // Exportar funciones para uso en HTML
 window.resetForm = resetForm;
 window.editarRegistro = editarRegistro;
 window.verDetalleRegistro = verDetalleRegistro;
+window.loadExistingRegistros = loadExistingRegistros;
 
-console.log('📝 Registro.js cargado - Atajos: Ctrl+S (Guardar), Ctrl+R (Limpiar), Esc (Volver)');
+console.log('📝 Registro.js cargado con API real - Atajos: Ctrl+S (Guardar), Ctrl+R (Limpiar), Esc (Volver), F5 (Recargar)');
