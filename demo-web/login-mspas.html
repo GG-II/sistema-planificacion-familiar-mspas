@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGPF - Sistema de Planificación Familiar</title>
+    <link rel="stylesheet" href="css/mspas-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-body">
+    <!-- Header Principal con Gradiente -->
+    <header class="mspas-header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="20" fill="white" fill-opacity="0.2"/>
+                        <path d="M24 14c-5.5 0-10 4.5-10 10s4.5 10 10 10 10-4.5 10-10-4.5-10-10-10zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z" fill="white"/>
+                        <circle cx="24" cy="20" r="3" fill="white"/>
+                        <path d="M24 26c-3 0-5.5 2-6.3 4.8-.2.7.3 1.2 1 1.2h10.6c.7 0 1.2-.5 1-1.2C29.5 28 27 26 24 26z" fill="white"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>SGPF - MSPAS</h1>
+                    <p>Sistema de Gestión de Planificación Familiar</p>
+                    <span class="location">Centro de Salud Norte - Huehuetenango</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="login-main">
+        <div class="login-container">
+            <!-- Card de Login -->
+            <div class="login-card">
+                <div class="login-card-header">
+                    <h2>Iniciar Sesión</h2>
+                    <p>Ingresa tus credenciales para acceder al sistema</p>
+                </div>
+
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            <span class="label-icon">📧</span>
+                            Email / DPI
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            class="form-input"
+                            placeholder="Ingresa tu email"
+                            value="admin@mspas.gob.gt"
+                            required 
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <span class="label-icon">🔒</span>
+                            Contraseña
+                        </label>
+                        <div class="password-input-container">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                class="form-input"
+                                placeholder="Ingresa tu contraseña"
+                                value="123456"
+                                required 
+                            >
+                            <button type="button" class="password-toggle" onclick="togglePassword()">
+                                <span id="eye-icon">👁️</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="login-button" id="login-btn">
+                        <span class="btn-content">
+                            <span class="btn-text">Iniciar Sesión</span>
+                            <span class="btn-loading" style="display: none;">
+                                <span class="loading-spinner"></span>
+                                Verificando...
+                            </span>
+                        </span>
+                    </button>
+
+                    <div class="forgot-password">
+                        <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Card de Información Demo -->
+            <div class="demo-info-card">
+                <div class="demo-badge">
+                    <span class="badge-icon">🧪</span>
+                    DEMO
+                </div>
+                
+                <div class="demo-content">
+                    <h3>Credenciales de Prueba</h3>
+                    <div class="credentials-grid">
+                        <div class="credential-item" onclick="quickFill('admin')">
+                            <div class="credential-header">
+                                <span class="user-icon">👩‍⚕️</span>
+                                <span class="user-role">Coordinadora Municipal</span>
+                            </div>
+                            <div class="credential-details">
+                                <div class="credential-field">
+                                    <span class="field-label">Email:</span>
+                                    <span class="field-value">admin@mspas.gob.gt</span>
+                                </div>
+                                <div class="credential-field">
+                                    <span class="field-label">Contraseña:</span>
+                                    <span class="field-value">123456</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="credential-item" onclick="quickFill('aux')">
+                            <div class="credential-header">
+                                <span class="user-icon">👩‍🔬</span>
+                                <span class="user-role">Auxiliar de Enfermería</span>
+                            </div>
+                            <div class="credential-details">
+                                <div class="credential-field">
+                                    <span class="field-label">Email:</span>
+                                    <span class="field-value">aux01@mspas.gob.gt</span>
+                                </div>
+                                <div class="credential-field">
+                                    <span class="field-label">Contraseña:</span>
+                                    <span class="field-value">123456</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer de Información -->
+            <div class="login-footer">
+                <div class="project-info">
+                    <p class="version">Versión 2.0 - Septiembre 2025</p>
+                </div>
+                <div class="connection-status" id="connection-status">
+                    <div class="status-indicator" id="status-indicator">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Verificando conexión...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/shared.js"></script>
+    <script src="js/login.js"></script>
+    
+    <script>
+        // Funciones específicas de la página
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.textContent = '👁️';
+            }
+        }
+
+        function quickFill(userType) {
+            const credentials = {
+                admin: { email: 'admin@mspas.gob.gt', password: '123456' },
+                aux: { email: 'aux01@mspas.gob.gt', password: '123456' }
+            };
+            
+            if (credentials[userType]) {
+                document.getElementById('email').value = credentials[userType].email;
+                document.getElementById('password').value = credentials[userType].password;
+                showNotification('Credenciales cargadas', 'success');
+            }
+        }
+
+        // Verificar estado del backend al cargar
+        window.addEventListener('load', async () => {
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusDot = statusIndicator.querySelector('.status-dot');
+            const statusText = statusIndicator.querySelector('.status-text');
+            
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                if (response.ok) {
+                    statusDot.className = 'status-dot connected';
+                    statusText.textContent = 'Conectado al backend';
+                } else {
+                    throw new Error('Backend no responde');
+                }
+            } catch (error) {
+                statusDot.className = 'status-dot disconnected';
+                statusText.textContent = 'Backend desconectado';
+                showNotification('Backend no disponible. Verifica que esté ejecutándose en puerto 5000', 'warning', 6000);
+            }
+        });
+    </script>
+</body>
+</html>

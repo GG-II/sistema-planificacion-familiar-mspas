@@ -152,11 +152,6 @@ const Registro = sequelize.define('Registro', {
     },
     {
       fields: ['registrado_por']
-    },
-    {
-      // Índice único para evitar registros duplicados
-      unique: true,
-      fields: ['comunidad_id', 'año', 'mes', 'registrado_por']
     }
   ]
 });
